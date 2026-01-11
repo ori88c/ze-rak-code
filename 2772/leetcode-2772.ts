@@ -17,7 +17,7 @@ import { SlimQueue } from 'data-oriented-slim-queue';
  * Referenced in README.md Observation 6.
  */
 interface IncrementalDecrementFix {
-  increaseBy: number; // Amount to subtract from accumulated_decrement
+  increaseBy: number; // Decrement contribution that expires at fromIndex
   fromIndex: number;  // Index where this fix applies (i+k for operation starting at i)
 }
 
@@ -49,9 +49,6 @@ interface IncrementalDecrementFix {
  */
 export function canZeroAllElements(nums: readonly number[], k: number): boolean {
   const n = nums.length;
-  
-  // Initialize the queue with optimal capacity to avoid reallocations.
-  // Maximum queue size is k (operations within a k-length sliding window).
   const fixesQueue = new SlimQueue<IncrementalDecrementFix>(k);
   
   // Tracks the cumulative decrement applied to the current index from all
@@ -59,9 +56,7 @@ export function canZeroAllElements(nums: readonly number[], k: number): boolean 
   let accumulatedDecrement = 0;
   
   for (let i = 0; i < n; ++i) {
-    // Apply scheduled fix if one exists for the current index.
-    // Referenced in README.md Observation 6: fixes occur in monotonically
-    // increasing index order, so the earliest fix is always at the front.
+    // Apply a scheduled fix if one exists for the current index.
     if (!fixesQueue.isEmpty && fixesQueue.firstIn.fromIndex === i) {
       accumulatedDecrement -= fixesQueue.firstIn.increaseBy;
       fixesQueue.pop();
@@ -72,24 +67,23 @@ export function canZeroAllElements(nums: readonly number[], k: number): boolean 
     // decrements scheduled by previous operations.
     const effectiveValue = nums[i] - accumulatedDecrement;
     
-    // Validation: Previous mandatory operations caused negativity.
     if (effectiveValue < 0) {
       return false;
     }
 
-    // No operation needed at this index if already zero.
     if (effectiveValue === 0) {
       continue;
     }
     
-    // The effective value is positive. By README.md Observation 1 (leftmost positive
-    // must be processed first), we MUST apply op(i, effectiveValue) to zero it out.
+    // The effective value is positive. By Observation 1 from the proof (leftmost
+    // positive must be processed first), we MUST apply op(i, effectiveValue) to zero
+    // it out.
     
     // First, verify that index i can actually start a k-length window.
     // We need indices [i, i+k) to exist.
     const windowExclusiveEnd = i + k;
     if (windowExclusiveEnd > n) {
-      return false;  // Cannot complete the required operation at index i
+      return false;
     }
     
     // Apply op(i, effectiveValue): conceptually decrement all elements in [i, i+k)
