@@ -7,7 +7,7 @@
 This proof may NOT be copied, modified, or translated to other languages. For self-study purposes only. See the repository `LICENSE` or visit https://github.com/ori88c/ for full terms.
 
 ### Problem (brief)
-Given events `[start, end]`, choose at most one day per event within its interval to maximize the number of attended events.
+Given events `[start, end]`, maximize how many events you can attend. Each event can be attended on any day within its interval, but you can only attend one event per day.
 
 ### Notation
 - `n` — number of events  
