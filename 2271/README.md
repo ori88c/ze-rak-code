@@ -43,12 +43,15 @@ While this problem is categorized as 'Medium' by users, its success rate is only
 In both cases, we can shift the carpet to align with some tile's left edge without decreasing coverage. Therefore, it suffices to consider only alignments starting at a tile's left edge.
 
 #### Observation 2 — Candidate cover with partial rightmost tile
+
+**Window invariant** (maintained by Observation 3): The rightmost tile in the window (`tiles[end-1]`) is the only tile that may extend partially or entirely beyond the carpet's reach. The second-to-rightmost tile (`tiles[end-2]`, if it exists) is necessarily fully covered by a carpet placed at `tiles[start].left`. This permits computing the white excess solely from the rightmost tile.
+
 When the carpet is aligned at `tiles[start].left`, the window `[start, end)` may extend beyond the carpet's reach. If `coveredSpanLength > carpetLen`, the rightmost tile is only partially covered. The carpet ends at position `tiles[start].left + carpetLen - 1`, so we must subtract the **white excess** — the portion of the rightmost tile that lies beyond the carpet's end:
 
 - If `tiles[start].left + carpetLen - 1 < tiles[end-1].left`: the carpet does not reach the rightmost tile at all; the entire rightmost tile is excess.
 - Otherwise: the excess is `tiles[end-1].right - (tiles[start].left + carpetLen - 1)` cells.
 
-The candidate cover is then `coveredWhiteCells - whiteExcess`.
+The candidate cover is then `coveredWhiteCells - whiteExcess`. By the window invariant, no other tile in the window contributes excess, so this subtraction is exact.
 
 #### Observation 3 — Two-pointer window management
 Since tiles are sorted and the carpet has fixed length, we can sweep a window `[start, end)` over the tiles using two pointers. Each main-loop iteration performs exactly one of:
@@ -57,6 +60,8 @@ Since tiles are sorted and the carpet has fixed length, we can sweep a window `[
 - **Shrink left**: If `coveredSpanLength >= carpetLen` or no more tiles exist to the right, increment `start` to discard the leftmost tile.
 
 This ensures every tile is considered as both a potential window start and a potential window end, and each pointer advances at most `n` times total.
+
+**Window invariant proof**: We expand (`end++`) only when `coveredSpanLength < carpetLen`, meaning all tiles currently in the window — including the current rightmost `tiles[end-1]` — fit entirely within the carpet's reach. After expansion, the *new* rightmost tile `tiles[end-1]` may extend beyond, but `tiles[end-2]` (the *previous* rightmost) was fully covered before expansion and remains so — the carpet's left edge has not moved. We shrink (`start++`) only when `coveredSpanLength >= carpetLen`, which moves the carpet's left edge rightward; the right boundary of the window has not changed, and the span has decreased, so if `tiles[end-2]` was within reach before the shrink, it remains within reach after. Therefore, at most one tile (the rightmost) can be partially or fully out of reach at any point during the sweep.
 
 ---
 
