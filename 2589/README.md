@@ -6,15 +6,8 @@
 
 This proof may NOT be copied, modified, or translated to other languages. For self-study purposes only. See the repository `LICENSE` or visit https://github.com/ori88c/ for full terms.
 
-### Similarities with LeetCode 1353
-I find both problems to share one prominent similarity: each provides a **range constraint** that is *not* required to achieve an `O(n log n)` solution, yet - if leveraged - offers a considerable shortcut that lowers the problem's apparent difficulty. In LeetCode 1353 the given constraint is `1 <= startDayi <= endDayi <= 10^5`, and in 2589 it is `1 <= starti, endi <= 2000`.
-
-My solutions deliberately attain the tightest time complexity **without** relying on those constraints, which I find makes the problems far more interesting and real-life oriented. Leveraging the constraint instead yields `O(n log n + n * timeSlotsCount)`, which collapses to roughly `O(n log n)` only if one treats the upper bound (the maximum day, or the maximum time slot) as a constant.
-
 ### Problem (brief)
 Given tasks `[start, end, duration]`, each task must run for `duration` total (not necessarily consecutive) integer time points within its interval `[start, end]`. The computer can run an unlimited number of tasks in parallel whenever it is turned on. Return the minimum number of time points during which the computer must be on, such that all tasks complete.
-
----
 
 ### Intuition - Why Is Postponing Execution Beneficial?
 
@@ -34,6 +27,16 @@ Every one of A's slots placed before time 4 lies outside B's interval and is the
 - Postponed placement of A's slots at `{8, 9, 10}`: this single batch simultaneously completes A, B, and C. Total: **3** (optimal).
 
 The greedy strategy is: delay every allocation until some task can no longer wait, and only then allocate the minimum forced amount.
+
+### Similarities with other LeetCode challenges
+
+#### Similarities with LeetCode 452
+Note that LeetCode 452 can be modeled as a private case of 2589, where `duration = 1` for all tasks. The same greedy incentive exists in both - postponing allocation increases likelihood for overlap (reusing the same slot), so allotments are performed only when *not* performing them necessarily implies a non-feasible task (in the case of 452: a non-burstable balloon).
+
+#### Similarities with LeetCode 1353
+I find both problems to share one prominent similarity: each provides a **range constraint** that is *not* required to achieve an `O(n log n)` solution, yet - if leveraged - offers a considerable shortcut that lowers the problem's apparent difficulty. In LeetCode 1353 the given constraint is `1 <= startDayi <= endDayi <= 10^5`, and in 2589 it is `1 <= starti, endi <= 2000`.
+
+My solutions deliberately attain the tightest time complexity **without** relying on those constraints, which I find makes the problems far more interesting and real-life oriented. Leveraging the constraint instead yields `O(n log n + n * timeSlotsCount)`, which collapses to roughly `O(n log n)` only if one treats the upper bound (the maximum day, or the maximum time slot) as a constant.
 
 ---
 
