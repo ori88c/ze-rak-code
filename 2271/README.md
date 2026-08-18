@@ -10,58 +10,49 @@ This proof may NOT be copied, modified, or translated to other languages. For se
 Given a list of disjoint white tile segments `[left, right]` on a number line and a carpet of length `carpetLen`, place the carpet to maximize the number of white tiles it covers. Return that maximum count.
 
 ### Context
-While this problem is categorized as 'Medium' by users, its success rate is only 35% as of Feb 2026. Despite not being mighty, it does require a few subtle nuances to observe, and is rather tricky to code in a readable manner — which is a separate challenge. I consider it less straightforward than most "2 Pointers" / "Sliding Window" challenges.
+While this problem is categorized as 'Medium' by users, its success rate is only 35% as of Feb 2026. Despite not being mighty, it does require a few subtle nuances to observe, and is rather tricky to code in a readable manner - which is a separate challenge. I consider it less straightforward than most "2 Pointers" / "Sliding Window" challenges.
 
 ### Notation
-- `tiles` — array of disjoint tile segments `[left, right]`, sorted ascending by `left`
-- `carpetLen` — the carpet's length (number of consecutive positions it covers)
-- `length(T)` — the number of white cells in tile `T`, i.e. `T.right - T.left + 1`
-- `start` — index of the leftmost tile in the current window
-- `end` — exclusive index of the rightmost tile in the current window (i.e., the window contains tiles `[start, end)`)
-- `coveredSpanLength` — total span from `tiles[start].left` to `tiles[end-1].right`, i.e. `tiles[end-1].right - tiles[start].left + 1`
-- `coveredWhiteCells` — sum of `length(T)` for all tiles `T` in the current window `[start, end)`
+- `tiles` - array of disjoint tile segments `[left, right]`, sorted ascending by `left`
+- `carpetLen` - the carpet's length (number of consecutive positions it covers)
+- `length(T)` - the number of white cells in tile `T`, i.e. `T.right - T.left + 1`
+- `start` - index of the leftmost tile in the current window
+- `end` - exclusive index of the rightmost tile in the current window (i.e., the window contains tiles `[start, end)`)
+- `coveredSpanLength` - total span from `tiles[start].left` to `tiles[end-1].right`, i.e. `tiles[end-1].right - tiles[start].left + 1`
+- `coveredWhiteCells` - sum of `length(T)` for all tiles `T` in the current window `[start, end)`
 
 ---
 
 ### Key Observations
 
-#### Observation 1 — The optimal alignment must start at some tile's left edge
+#### Observation 1 - An optimal alignment can start at some tile's left edge
 **Claim**: There exists an optimal carpet placement whose leftmost position coincides with some tile's left edge.
 
-**Proof by contradiction**:
+**Proof**: Suppose an optimal carpet starts at `i`, where `i` is not a tile's left edge. If `i` lies inside a white tile, shift the carpet left one position at a time while its left endpoint remains inside that tile. Each shift gains one white cell on the left and loses at most one white cell on the right, so coverage never decreases. Eventually the carpet starts at that tile's left edge.  
+If `i` lies in a gap and there is a tile to its right, shift the carpet right until its left endpoint reaches that tile's left edge. Throughout the shift, every position removed from the carpet's left side lies in the gap, so no white cells are lost, while new white cells may be gained on the right. Therefore coverage cannot decrease.  
+If there is no tile to the right, such a placement cannot be optimal, since it covers no white cells.
 
-- **Case I — Alignment starts mid-tile**: Assume the optimal carpet alignment starts in the middle of some tile `T`, i.e. `leftmostPosition(carpet) = i` where `T.left < i <= T.right`. Let `D = i - T.left`. Shifting the carpet `D` positions to the left **gains exactly** `D` white tiles on the left side (each step uncovers one more cell of `T`). On the right side, we **lose at most** `D` white tiles — those at positions `[i + carpetLen - D, i + carpetLen - 1]`, which may or may not be white. The net change satisfies `0 <= gain - loss <= D`, so the shifted alignment is at least as good. This contradicts the assumption that the original mid-tile alignment was strictly optimal.
-
-- **Case II — Alignment starts between tiles (gap)**: Assume the optimal carpet alignment starts at position `i` where no tile overlaps `i`. Let `T` be the nearest tile to the right, i.e. the leftmost tile with `T.left > i`. Let `D = T.left - i`. We consider shifting the carpet `D` positions to the right and distinguish two subcases based on the relationship between `carpetLen` and `D`:
-
-  - **Subcase II-a** (`carpetLen >= D`): The carpet is at least as long as the gap. After the shift, the carpet's new range is `[i + D, i + D + carpetLen - 1]`. The old range was `[i, i + carpetLen - 1]`. The new range loses the `D`-length prefix `[i, i + D - 1]`, which contained zero white tiles (it lies in the gap). The new range gains the `D`-length suffix `[i + carpetLen, i + carpetLen + D - 1]`, which contains zero or more white tiles. Therefore the net change is non-negative, and the shifted alignment also gains at least `min(D, length(T))` white tiles from `T` in the new prefix region. The shifted alignment is strictly at least as good.
-
-  - **Subcase II-b** (`carpetLen < D`): The carpet is shorter than the gap. The entire carpet `[i, i + carpetLen - 1]` lies within the gap and covers zero white tiles. Any placement covering at least one white tile is at least as good, so this alignment cannot be uniquely optimal.
-
-  In both subcases, the gap-aligned placement is not strictly optimal, which refutes the contradictory assumption.
-
-In both cases, we can shift the carpet to align with some tile's left edge without decreasing coverage. Therefore, it suffices to consider only alignments starting at a tile's left edge.
-
-#### Observation 2 — Candidate cover with partial rightmost tile
+#### Observation 2 - Candidate cover with partial rightmost tile
 
 **Window invariant** (maintained by Observation 3): The rightmost tile in the window (`tiles[end-1]`) is the only tile that may extend partially or entirely beyond the carpet's reach. The second-to-rightmost tile (`tiles[end-2]`, if it exists) is necessarily fully covered by a carpet placed at `tiles[start].left`. This permits computing the white excess solely from the rightmost tile.
 
-When the carpet is aligned at `tiles[start].left`, the window `[start, end)` may extend beyond the carpet's reach. If `coveredSpanLength > carpetLen`, the rightmost tile is only partially covered. The carpet ends at position `tiles[start].left + carpetLen - 1`, so we must subtract the **white excess** — the portion of the rightmost tile that lies beyond the carpet's end:
+When the carpet starts at `tiles[start].left`, the window `[start, end)` may extend beyond its right edge. If `coveredSpanLength > carpetLen`, some or all of the rightmost tile may lie outside the carpet. Since the carpet ends at `tiles[start].left + carpetLen - 1`, we subtract this **white excess**:
 
 - If `tiles[start].left + carpetLen - 1 < tiles[end-1].left`: the carpet does not reach the rightmost tile at all; the entire rightmost tile is excess.
 - Otherwise: the excess is `tiles[end-1].right - (tiles[start].left + carpetLen - 1)` cells.
 
 The candidate cover is then `coveredWhiteCells - whiteExcess`. By the window invariant, no other tile in the window contributes excess, so this subtraction is exact.
 
-#### Observation 3 — Two-pointer window management
+#### Observation 3 - Two-pointer window management
 Since tiles are sorted and the carpet has fixed length, we can sweep a window `[start, end)` over the tiles using two pointers. Each main-loop iteration performs exactly one of:
 
 - **Expand right**: If `coveredSpanLength < carpetLen` and more tiles exist, increment `end` to include the next tile.
 - **Shrink left**: If `coveredSpanLength >= carpetLen` or no more tiles exist to the right, increment `start` to discard the leftmost tile.
 
-This ensures every tile is considered as both a potential window start and a potential window end, and each pointer advances at most `n` times total.
+Each pointer advances at most `n` times, so the sweep is `O(n)` after sorting.
 
-**Window invariant proof**: We expand (`end++`) only when `coveredSpanLength < carpetLen`, meaning all tiles currently in the window — including the current rightmost `tiles[end-1]` — fit entirely within the carpet's reach. After expansion, the *new* rightmost tile `tiles[end-1]` may extend beyond, but `tiles[end-2]` (the *previous* rightmost) was fully covered before expansion and remains so — the carpet's left edge has not moved. We shrink (`start++`) only when `coveredSpanLength >= carpetLen`, which moves the carpet's left edge rightward; the right boundary of the window has not changed, and the span has decreased, so if `tiles[end-2]` was within reach before the shrink, it remains within reach after. Therefore, at most one tile (the rightmost) can be partially or fully out of reach at any point during the sweep.
+**Window invariant proof**: We expand the window only when its current span is shorter than `carpetLen`. Therefore, before adding a new tile, every tile already in the window is fully covered. After the expansion, only the newly added rightmost tile can extend beyond the carpet.  
+When we shrink from the left, the carpet's left edge moves right, while `end` stays fixed. Thus shrinking cannot cause any previously covered tile on the right to become uncovered. Hence, at any point, only `tiles[end-1]` may lie partially or entirely beyond the carpet.
 
 ---
 
@@ -83,5 +74,5 @@ This ensures every tile is considered as both a potential window start and a pot
 Together, these observations ensure the algorithm finds the globally optimal placement.
 
 ### Complexity
-- **Time**: `O(n log n)` — Dominated by sorting. The two-pointer sweep is `O(n)` since each pointer advances at most `n` times.
-- **Space**: `O(n)` — For the sorted copy of the tiles array (or `O(1)` additional space if sorting in-place).
+- **Time**: `O(n log n)` - Dominated by sorting. The two-pointer sweep is `O(n)` since each pointer advances at most `n` times.
+- **Space**: `O(n)` - For the sorted copy of the tiles array (or `O(1)` additional space if sorting in-place).
