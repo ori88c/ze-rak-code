@@ -6,6 +6,25 @@
 
 This proof may NOT be copied, modified, or translated to other languages. For self-study purposes only. See the repository `LICENSE` or visit https://github.com/ori88c/ for full terms.
 
+### Table of Contents
+
+- [Problem (brief)](#problem-brief)
+- [Brute Force - Laying the Foundation & Terminology Before Optimizing](#brute-force)
+  - [Observation 1 - `DESC_PRICES` Is a Concatenation of Equal-Value Blocks](#observation-1)
+  - [Observation 2 - Block Lengths Are Monotonically Non-Decreasing](#observation-2)
+- [Optimized `O(|colors| * log|colors|)` Solution](#optimized-solution)
+  - [Observation 3 - Active Prefixes Define Ranges of Equal-Length Blocks](#observation-3)
+  - [Example - `descInventory = [15,15,1]`](#example)
+  - [Observation 4 - All Blocks of the Same Length Can Be Processed at Once](#observation-4)
+  - [Observation 5 - The Final Range May Be Only Partially Consumed](#observation-5)
+- [Algorithm Outline](#algorithm)
+- [Correctness](#correctness)
+- [Complexity](#complexity)
+
+---
+
+<a id="problem-brief"></a>
+
 ### Problem (brief)
 
 We are given an `inventory` array, where `inventory[i]` is the number of balls of color `i`.
@@ -17,6 +36,8 @@ When selling a ball of some color, its value is the **current quantity** of that
 Sell `orders` balls for the maximum possible profit.
 
 ---
+
+<a id="brute-force"></a>
 
 ### Brute Force - Laying the Foundation & Terminology Before Optimizing
 
@@ -43,6 +64,8 @@ Therefore, the prefix `DESC_PRICES[0, orders)` is both:
 
 Thus the problem **reduces to efficiently computing that prefix sum without constructing `DESC_PRICES`**.
 
+<a id="observation-1"></a>
+
 #### Observation 1 - `DESC_PRICES` Is a Concatenation of Equal-Value Blocks
 
 Consider again:  
@@ -68,6 +91,8 @@ lengthOfBlock(v) = number of colors with inventory[i] >= v
 
 A single color can never contribute twice to the same block, because its sale prices are strictly decreasing.
 
+<a id="observation-2"></a>
+
 #### Observation 2 - Block Lengths Are Monotonically Non-Decreasing
 
 As the price decreases, blocks can only stay the same length or become longer. Formally, if a color contributes a sale at price `v`, then its initial quantity is at least `v`, so it must also contribute a sale at price `v-1`. This yields `lengthOfBlock(v-1) >= lengthOfBlock(v)`.
@@ -89,6 +114,8 @@ This monotonicity is the key property that allows `DESC_PRICES` to be reconstruc
 
 ---
 
+<a id="optimized-solution"></a>
+
 ### Optimized `O(|colors| * log|colors|)` Solution
 
 Let `descInventory = inventory sorted in descending order`. For example:
@@ -100,6 +127,8 @@ descInventory = [3,3,1]
 We traverse `descInventory` from left to right.
 
 The important idea is that we do **not** simulate individual sales and we do **not** explicitly decrease inventory quantities. Instead, the sorted inventory tells us exactly where the length of the blocks in `DESC_PRICES` changes.
+
+<a id="observation-3"></a>
 
 #### Observation 3 - Active Prefixes Define Ranges of Equal-Length Blocks
 
@@ -155,6 +184,8 @@ levelCount = currLevel - nextLevel
 ```
 
 If `currLevel == nextLevel`, then `levelCount == 0`. The prefix is not active: no price level produces a block of exactly this `blockLength`, so this prefix length can simply be skipped.
+
+<a id="example"></a>
 
 #### Example - `descInventory = [15,15,1]`
 
@@ -215,6 +246,8 @@ The final block is:
 ```
 
 Thus, by traversing only the three entries of `descInventory`, we have **implicitly described** every block of `DESC_PRICES`.
+
+<a id="observation-4"></a>
 
 #### Observation 4 - All Blocks of the Same Length Can Be Processed at Once
 
@@ -278,6 +311,8 @@ instead of individually processing:
 This is the main optimization.
 
 The number of distinct price levels may be extremely large, but the number of blocks (Active Prefixes) is at most the number of colors.
+
+<a id="observation-5"></a>
 
 #### Observation 5 - The Final Range May Be Only Partially Consumed
 
@@ -350,6 +385,8 @@ At that point all `orders` have been fulfilled, so the traversal terminates.
 
 ---
 
+<a id="algorithm"></a>
+
 ### Algorithm Outline
 
 1. Sort `inventory` in descending order into `descInventory`.
@@ -398,6 +435,8 @@ At that point all `orders` have been fulfilled, so the traversal terminates.
      * Set `remainingOrders = 0` and terminate the traversal.
 4. Return `profit % MODULO`.
 
+<a id="correctness"></a>
+
 ### Correctness
 
 From the brute-force argument, the optimal answer is exactly the sum of the first `orders` elements of `DESC_PRICES`. It remains to show that the optimized traversal computes this same prefix.
@@ -417,6 +456,8 @@ When the requested prefix ends inside a range, Observation 5 first takes as many
 Therefore, at every stage, the optimized algorithm accumulates exactly the same values that a left-to-right traversal of `DESC_PRICES` would accumulate.
 
 Hence the final accumulated profit equals the maximum possible profit.
+
+<a id="complexity"></a>
 
 ### Complexity
 
