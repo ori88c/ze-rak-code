@@ -6,8 +6,27 @@
 
 This proof may NOT be copied, modified, or translated to other languages. For self-study purposes only. See the repository `LICENSE` or visit https://github.com/ori88c/ for full terms.
 
+### Table of Contents
+
+- [Problem (brief)](#problem-brief)
+- [Notation](#notation)
+- [Key Observations](#key-observations)
+  - [Observation 1 — Each full pass costs exactly `|remaining|` operations](#observation-1)
+  - [Observation 2 — Post-pass index monotonicity](#observation-2)
+  - [Observation 3 — Deletions per pass equal the LMAAS](#observation-3)
+  - [Observation 4 — Efficient LMAAS computation via upfront sorting](#observation-4)
+- [Algorithm Outline](#algorithm)
+- [Correctness Sketch](#correctness)
+- [Complexity](#complexity)
+
+---
+
+<a id="problem-brief"></a>
+
 ### Problem (brief)
 Given an array `nums` of distinct integers, repeatedly apply: if the first element is the current minimum, remove it; otherwise, move it to the end. Return the total number of operations needed to empty the array.
+
+<a id="notation"></a>
 
 ### Notation
 - `n` — length of `nums`
@@ -15,7 +34,11 @@ Given an array `nums` of distinct integers, repeatedly apply: if the first eleme
 
 ---
 
+<a id="key-observations"></a>
+
 ### Key Observations
+
+<a id="observation-1"></a>
 
 #### Observation 1 — Each full pass costs exactly `|remaining|` operations
 Define `fullPass(remainedItems)` as one complete left-to-right traversal of the array state at the beginning of a pass, where `remainedItems` contains exactly the elements not removed by previous passes.
@@ -26,12 +49,16 @@ Assume the current `nextPassItemsArray` (i.e., `remainedItems`) contains `X` ele
 
 Note that whether an element is removable does not affect the operation count per pass — only the number of remaining elements matters. For instance, in `[5, 9, 7]`, we cannot remove 9 while 7 exists, but the first pass still costs 3 operations.
 
+<a id="observation-2"></a>
+
 #### Observation 2 — Post-pass index monotonicity
 After any full pass, the remaining elements in `nextPassItemsArray` form a subsequence of the original array whose original indices are strictly ascending.
 
 **Reasoning**: Initially, the original indices of `nums` are trivially ascending: `0, 1, ..., n-1`. Each pass removes a subset of elements. Since removing elements from an ascending index sequence preserves the ascending property for the remaining indices, this invariant holds after every pass.
 
 **Example**: After the first pass on `[5, 9, 4]`, the minimum value 4 is removed, leaving `[5, 9]` with original indices `0, 1` — still ascending.
+
+<a id="observation-3"></a>
 
 #### Observation 3 — Deletions per pass equal the LMAAS
 During one full pass over `nextPassItemsArray`, an element can be removed only if it is the current minimum at the time it is visited. Since elements are visited left-to-right (by ascending original index), and removals occur in ascending value order, the set of elements removable in a single pass is exactly the **Longest Minimum-Anchored Ascending Subsequence (LMAAS)**:
@@ -44,6 +71,8 @@ The ascending-value property guarantees that each element is removed **only afte
 **Examples**:
 - `nextPassItemsArray = [3, 4, 5]`: `|LMAAS| = 3` (values 3, 4, 5 — indices are ascending). Each visit encounters the current minimum, so all three elements are removed in one pass.
 - `nextPassItemsArray = [3, 9, 4]`: `|LMAAS| = 2` (values 3, 4 — indices 0, 2 are ascending). Value 9 cannot be removed because when it is visited, the smaller value 4 still exists.
+
+<a id="observation-4"></a>
 
 #### Observation 4 — Efficient LMAAS computation via upfront sorting
 Computing the LMAAS independently for each pass still becomes expensive. Even though LMAAS is not the classical LIS (because it is minimum-anchored), a naive per-pass approach that recomputes the removable set from scratch can still cost `O(n log n)` per pass in typical implementations, leading to `O(n^2 log n)` overall in the worst case — and therefore not improving over straightforward quadratic simulation. In other words, Observation 3 provides a clean characterization, but we must leverage it further to achieve a real performance benefit.
@@ -68,6 +97,8 @@ So the key complexity point is this: in a literal brute-force simulation, elemen
 
 ---
 
+<a id="algorithm"></a>
+
 ### Algorithm Outline
 1. Create `ascItems`: an array of `{ value, originalIndex }` pairs from `nums`, sorted by ascending `value`.
 2. Initialize `totalOperations = 0` and `ascIndex = 0`.
@@ -82,6 +113,8 @@ So the key complexity point is this: in a literal brute-force simulation, elemen
 
 ---
 
+<a id="correctness"></a>
+
 ### Correctness Sketch
 - **Observation 1** establishes that each full pass over `nextPassItemsArray` costs exactly `|remaining|` operations, regardless of how many elements are removed — both removal and move-to-end advance the pointer equally.
 - **Observation 2** guarantees that remaining elements always maintain ascending original indices after each pass, preserving the structural invariant needed for subsequent passes.
@@ -89,6 +122,8 @@ So the key complexity point is this: in a literal brute-force simulation, elemen
 - **Observation 4** shows that sorting by value upfront and sweeping with a single pointer computes all per-pass LMAAS boundaries in `O(n)` total; in `ascItems`, each pass corresponds to consuming a contiguous prefix of the still-unprocessed suffix.
 
 Together, these observations show why the counting is correct and efficient. We add `|remaining|` once per pass (Observation 1), and we locate each pass exactly by scanning `ascItems` until the first index-monotonicity break (Observations 3-4). Equivalently, `ascItems` decomposes into ascending-index blocks, and each block is exactly the set of items deleted in one pass.
+
+<a id="complexity"></a>
 
 ### Complexity
 - **Time**: `O(n log n)` — Dominated by sorting. The main-loop sweep is `O(n)` since `ascIndex` advances at most `n` times total.
