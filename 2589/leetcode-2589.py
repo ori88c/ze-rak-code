@@ -10,14 +10,15 @@ See LICENSE file or visit https://github.com/ori88c/ for full terms.
 
 from dataclasses import dataclass
 from heapq import heappush, heappop
+from typing import NamedTuple
 
 
-@dataclass(order=True)
-class Task:
+class Task(NamedTuple):
     """A task to be scheduled.
 
-    Ordering is by (start, end, duration), so sorting a list of tasks
-    yields chronological order by start time.
+    NamedTuple comparison compares fields in declaration order.
+    `start` is declared before `end` before `duration`, so sorting a list of
+    tasks yields chronological order by start time.
 
     Attributes:
         start: First time point at which the task may run.
@@ -31,7 +32,7 @@ class Task:
     duration: int
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ActiveTask:
     """A task whose interval has begun but may still require ON slots.
 
